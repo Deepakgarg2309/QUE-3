@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
 @SpringBootApplication
 public class JsonReadingApplication {
 	
@@ -54,11 +55,13 @@ public class JsonReadingApplication {
                     objMap.put(key, value);
                 } else if (value.contains(".")) {
                     // Floating-point number
-                    BigDecimal decimalValue = new BigDecimal(value);
+                    ArbitraryDecimalPrecisionNumber decimalValue = new ArbitraryDecimalPrecisionNumber(value);
                     objMap.put(key, decimalValue);
                 } else {
                     // Integer number
-                    long longValue = Long.parseLong(value);
+                    //System.out.println(value);
+                    ArbitraryPrecisionNumber  longValue= new ArbitraryPrecisionNumber(value);
+                    //System.out.println(longValue);
                     objMap.put(key, longValue);
                 }
             }
@@ -69,7 +72,7 @@ public class JsonReadingApplication {
         return result;
     }
 	public static void main(String[] args) {
-		String jsonString = "[{\"name\":\"Ankur\",\"age\":27,\"salary\":1000.50},{\"name\":\"Anuj\",\"age\":25,\"salary\":2000.75}]";
+		String jsonString = "[{\"name\":\"Ankur\",\"age\":27,\"salary\":10657657647564647600.50654647547545454345344365746},{\"name\":\"Anuj\",\"age\":25,\"salary\":2000.75}]";
 
         List<Map<String, Object>> resultList = parseJson(jsonString);
         for (Map<String, Object> objMap : resultList) {
