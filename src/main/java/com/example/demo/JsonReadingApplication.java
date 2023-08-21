@@ -1,55 +1,48 @@
-
 package com.example.demo;
 
-import com.example.demo.model.Person;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationConfig;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.lang.reflect.Field;
 
-@SpringBootApplication
 public class JsonReadingApplication {
-        
 
-	public static void main(String[] args) throws JsonProcessingException {
-        ObjectMapper objectMapper = new ObjectMapper();
-        Person p = new Person();
+        public static <T> T readValue(String json, Class<T> valueType) {
+                try {
+                        json = json.trim();
+                        if (!json.startsWith("{") || !json.endsWith("}")) {
+                                throw new IllegalArgumentException("Invalid JSON format");
+                        }
 
-        p.setAge(25);
-        p.setName("Ankur");
-        p.setSalary(1900.90);
-        Person p1 = new Person();
+                        json = json.substring(1, json.length() - 1);
+                        String[] keyValuePairs = json.split(",");
 
-        p1.setAge(30);
-        p1.setName("Anuj");
-        p1.setSalary(3999.90);
+                        T instance = valueType.getDeclaredConstructor().newInstance();
 
-        List<Person> persons= new ArrayList<>();
-        persons.add(p);
-        persons.add(p1);
-        String jsonString2 = objectMapper.writeValueAsString(persons);
-        System.out.println(jsonString2);
-        List<Person> person = objectMapper.readValue(jsonString2, new TypeReference<List<Person>>() {
-        });
-        System.out.println(person.get(0).getName());
-        System.out.println(person.get(0).getAge());
-        System.out.println(person.get(0).getSalary());
-        System.out.println(person.get(1).getName());
-        System.out.println(person.get(1).getAge());
-        System.out.println(person.get(1).getSalary());
+                        for (String keyValuePair : keyValuePairs) {
+                                String[] parts = keyValuePair.split(":");
+                                String key = parts[0].trim().replaceAll("\"", ""); // Remove double quotes
+                                String value = parts[1].trim().replaceAll("\"", "");
 
-	}
+                                Field field = valueType.getDeclaredField(key);
+                                field.setAccessible(true);
 
+                                Class<?> fieldType = field.getType();
+                                if (fieldType == String.class) {
+                                        field.set(instance, value);
+                                } else if (fieldType == int.class || fieldType == Integer.class) {
+                                        field.set(instance, Integer.parseInt(value));
+                                }
+                        }
+
+                        return instance;
+                } catch (Exception e) {
+                        throw new RuntimeException("Error reading value: " + e.getMessage(), e);
+                }
+        }
+
+        public static void main(String[] args) {
+                String json = "{\"name\": \"Deepak\", \"age\": 20}";
+                Person person = readValue(json, Person.class);
+
+                System.out.println("Name: " + person.getName()); // Output: John
+                System.out.println("Age: " + person.getAge());   // Output: 30
+        }
 }
